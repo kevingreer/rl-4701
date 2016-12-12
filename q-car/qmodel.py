@@ -14,12 +14,20 @@ HIDDEN1_SIZE = 512
 HIDDEN2_SIZE = 256
 LEARNING_RATE = 0.0001
 STARTING_EPS = 0.5
+GAMMA = 1.0
+
 MINIMUM_EPS = 0.1
 DAMP_FACTOR_EPS = 0.9
 EPOCHS = 3000
-GAMMA = 1.0
 MEM_LIMIT = 100000
 BATCH_SIZE = 40
+FRAME_LIMIT = 10000
+
+WIN_STREAK = 20
+WIN_THRESHOLD = 300
+FAILS_ALLOWED = 5
+
+RENDER = False
 
 class QModel(object):
     def __init__(self):
@@ -66,35 +74,31 @@ class QModel(object):
         return self.model.fit(phi, y, batch_size=phi.shape[0], nb_epoch=1, verbose=0)
 
     def learn(self):
+        failures = 0
+        streak = 0
+        started_streak = -1
         env = self.env
         epsilon = STARTING_EPS
-        batchSize = 40
-        buffer = 80
         memory = []
         for epoch in range(EPOCHS):
             state = env.reset()
             done = False
-            # while game still in progress
             frame_count = 0
             while not done:
-                env.render()
-                # We are in state S
-                # Let's run our Q function on S to get Q values for all possible actions
-                if random.random() < epsilon:  # choose random action
+                if RENDER:
+                    env.render()
+                if random.random() < epsilon:
                     action = np.random.randint(0, 3)
-                else:  # choose best action from Q(s,a) values
-                    # print "not random"
+                else:
                     qval = self.predict(state)
                     action = (np.argmax(qval))
-                # Take action, observe new state S'
                 new_state, reward, done, _ = env.step(action)
 
                 memory.append((state, action, reward, new_state))
                 if len(memory) > MEM_LIMIT:
                     memory.pop(0)
-                # Experience replay storage
                 if len(memory) > 2*BATCH_SIZE:
-                    minibatch = random.sample(memory, batchSize)
+                    minibatch = random.sample(memory, BATCH_SIZE)
                     X = map(lambda t: t[0], minibatch)
                     X_next = map(lambda t: t[3], minibatch)
                     oldq_vals = self.predict(np.array(X))
@@ -103,18 +107,32 @@ class QModel(object):
                     func = lambda m, r: np.add(r, np.multiply(GAMMA, m))
                     vfunc = np.vectorize(func)
                     updates = vfunc(maxes, reward)
-                    for i in range(batchSize):
+                    for i in range(BATCH_SIZE):
                         oldq_vals[i, minibatch[i][1]] = updates[i]
                     self.train(np.array(X), oldq_vals)
                 state = new_state
                 frame_count += 1
 
-                # if frame_count % 100 == 0:
-                #     print('Episode {}, Step {}, eps {}'.format(epoch, frame_count, epsilon))
-                #     if len(replay) > 128:
-                #         print('\t{}'.format(oldq_vals[0]))
+                if frame_count > FRAME_LIMIT:
+                    failures += 1
+                    if failures == FAILS_ALLOWED:
+                        print "Experiment completed: failure in {} epochs".format(epoch)
+                        exit()
+
             if epsilon > MINIMUM_EPS:
                 epsilon *= DAMP_FACTOR_EPS
-            print "Epoch {} finished after {} frames".format(epoch, frame_count)
+
+            if frame_count < WIN_THRESHOLD:
+                if started_streak < 0:
+                    started_streak = epoch - 1
+                streak += 1
+                print "Epoch {} finished after {} frames\tWin streak of {}".format(epoch, frame_count, streak)
+                if streak == WIN_STREAK:
+                    print "Experiment completed: took {} epochs".format(started_streak)
+                    exit()
+            else:
+                print "Epoch {} finished after {} frames".format(epoch, frame_count)
+                streak = 0
+                started_streak = -1
 
 QModel().learn()
