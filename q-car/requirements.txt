@@ -2,3 +2,4 @@ keras
 numpy
 theano
 tensorflow
+sklearn
