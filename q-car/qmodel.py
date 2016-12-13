@@ -1,17 +1,16 @@
-from keras.models import Sequential
-from keras.layers.core import Dense, Dropout, Activation
-from keras.layers.advanced_activations import LeakyReLU
-from keras.optimizers import RMSprop
 import random
-import numpy as np
+
 import gym
+import numpy as np
 import sklearn.preprocessing
+from keras.layers.core import Dense, Activation
+from keras.models import Sequential
+from keras.optimizers import RMSprop
 from sklearn.kernel_approximation import RBFSampler
-from sklearn.pipeline import FeatureUnion
 
 KPCA_DIMS = 100
-HIDDEN1_SIZE = 512
-HIDDEN2_SIZE = 256
+HIDDEN1_SIZE = 200
+HIDDEN2_SIZE = 50
 LEARNING_RATE = 0.0001
 STARTING_EPS = 0.5
 GAMMA = 1.0
@@ -33,37 +32,32 @@ class QModel(object):
     def __init__(self):
         self.env = gym.make('MountainCar-v0')
         model = Sequential()
-        model.add(Dense(HIDDEN1_SIZE, init='glorot_normal', input_shape=(KPCA_DIMS,)))
-        model.add(LeakyReLU())
+        model.add(Dense(HIDDEN1_SIZE, init='normal', input_shape=(KPCA_DIMS,)))
+        model.add(Activation('relu'))
 
-        model.add(Dense(HIDDEN2_SIZE, init='glorot_normal'))
-        model.add(LeakyReLU())
+        model.add(Dense(HIDDEN2_SIZE, init='normal'))
+        model.add(Activation('relu'))
 
-        model.add(Dense(3, init='glorot_normal'))
-        model.add(Activation('linear'))  # linear output so we can have range of real-valued outputs
+        model.add(Dense(3, init='normal'))
+        model.add(Activation('linear'))
 
         rms = RMSprop(lr=LEARNING_RATE)
         model.compile(loss='mse', optimizer=rms)
         self.model = model
 
-        observation_examples = np.array([self.env.observation_space.sample() for x in range(100000)])
+        observations = np.array([self.env.observation_space.sample() for _ in range(100000)])
         self.scaler = sklearn.preprocessing.StandardScaler()
-        self.scaler.fit(observation_examples)
-
-        self.feature_map = RBFSampler(n_components=100, gamma=1., random_state=1)
-        self.feature_map.fit(self.scaler.transform(observation_examples))
+        self.scaler.fit(observations)
+        self.kpca = RBFSampler(n_components=KPCA_DIMS)
+        self.kpca.fit(self.scaler.transform(observations))
 
     def process(self, states):
-        s_float32 = np.array(states).astype(np.float32)
-        if len(s_float32.shape) == 1:
-            s_float32 = np.expand_dims(s_float32, axis=0)
-        s_float32 = self._scale_state(s_float32)
-        s_float32 = self.feature_map.transform(s_float32)
-        s_float32 = s_float32.astype(np.float32)
-        return s_float32
-
-    def _scale_state(self, s_float32):
-        return self.scaler.transform(s_float32)
+        npstates = np.array(states)
+        if len(npstates.shape) == 1:  # if it's a single input, make it a row vector
+            npstates = np.expand_dims(npstates, axis=0)
+        scaled_states = self.scaler.transform(npstates)
+        phi = self.kpca.transform(scaled_states)
+        return phi
 
     def predict(self, s):
         phi = self.process(s)
@@ -118,6 +112,7 @@ class QModel(object):
                     if failures == FAILS_ALLOWED:
                         print "Experiment completed: failure in {} epochs".format(epoch)
                         exit()
+                    break
 
             if epsilon > MINIMUM_EPS:
                 epsilon *= DAMP_FACTOR_EPS

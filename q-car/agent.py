@@ -4,6 +4,10 @@ import random
 
 LEFT, BRAKE, RIGHT = 0, 1, 2
 
+#############################################
+# DISCLAIMER: this class will not function because we modified the gym environment to create the `peek_step` function,
+# which this class uses. We do not include that modification of gym here.
+#############################################
 class Agent(object):
     def __init__(self, model, action_space):
         self.model = model

@@ -1,10 +1,10 @@
+import random
+from subprocess import Popen, PIPE
+
 import chess
 import chess.pgn
-import random
 import numpy as np
-from chess import QUEEN, KING, PAWN, BISHOP, KNIGHT, ROOK, BLACK, WHITE
-import math
-from subprocess import Popen, PIPE
+from chess import QUEEN, PAWN, BISHOP, KNIGHT, ROOK, BLACK, WHITE
 
 PIECE_TYPES = [chess.PAWN, chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN, chess.KING]
 NUM_PIECES = {chess.PAWN: 8, chess.KNIGHT: 2, chess.BISHOP: 2,chess.ROOK: 2, chess.QUEEN: 1, chess.KING: 1}
@@ -16,7 +16,7 @@ PIECE_TO_NUM = {None: -1, chess.PAWN: 0, chess.KNIGHT: 1, chess.BISHOP: 2, chess
 RIGHT_EDGE = [7, 15, 23, 31, 39, 47, 55, 63]
 LEFT_EDGE = [0, 8, 16, 24, 32, 40, 48, 56]
 
-PGN_FILE = open('../data/CCRL-4040.[673112].pgn')
+PGN_FILE = open('../data/TrainingGames.pgn')
 
 WK, WQ, WR, WN, WB, WP = 0, 1, 2, 3, 4, 5
 BK, BQ, BR, BN, BB, BP = 8, 9, 10, 11, 12, 13
@@ -376,6 +376,8 @@ class Game:
 
         for square in chess.SQUARES:
             square_feats.append(self.get_lowest_attacker_square(square))
+
+        # Defender features are too slow
         #     if self.board.piece_at(square) is not None:
         #         if self.board.piece_at(square).color == chess.WHITE:
         #             square_feats.append(self.get_lowest_defender_of_color(chess.WHITE, square))

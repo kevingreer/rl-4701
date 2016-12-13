@@ -170,7 +170,7 @@ class TdModel(object):
         # shared_tester.test(players[0])
 
 
-    def run_giraffe_training(self):
+    def run_batch_training(self):
         players = [AiAgent(self, 1), AiAgent(self, -1)]
 
         for episode in range(EPISODES):
@@ -214,7 +214,7 @@ class TdModel(object):
                 self.saver.save(self.sess, checkpoint_file, global_step=self.global_step)
                 shared_tester.test(players[0])
 
-    def run_training(self):
+    def run_seq_training(self):
         players = [AiAgent(self, 1), AiAgent(self, -1)]
 
         for episode in range(EPISODES):

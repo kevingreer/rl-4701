@@ -13,24 +13,16 @@ class AiAgent(object):
         v_best = -2*ideal
         a_best = None
 
-        # self.nodes = 0
         for a in moves:
             game.take_action(a)
             # We want move that's closest to our ideal value
-            # features = game.extract_features()
-            # v = self.model.get_output(features)
-            # _, best_score = self.minimax(game.get_actions(), game, 1.0, ideal)
-            # best_score = self.model.get_output(game.extract_features())
-            best_score = game.stockfish_eval()
+            _, best_score = self.minimax(game.get_actions(), game, 1.0, ideal)
             if abs(ideal - best_score) < abs(ideal - v_best):
                 v_best = best_score
                 a_best = a
             elif abs(ideal - best_score) == abs(ideal - v_best):
                 a_best = random.choice([a_best, a])
             game.undo_action()
-        # print self.nodes
-        # print game.board
-        # print v_best
         return a_best if not value else v_best
 
     def minimax(self, actions, game, current_prob, player_ideal):
