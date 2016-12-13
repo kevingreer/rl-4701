@@ -2,11 +2,11 @@ import random
 
 import gym
 import numpy as np
-import sklearn.preprocessing
 from keras.layers.core import Dense, Activation
 from keras.models import Sequential
 from keras.optimizers import RMSprop
 from sklearn.kernel_approximation import RBFSampler
+from sklearn.preprocessing import StandardScaler
 
 KPCA_DIMS = 100
 HIDDEN1_SIZE = 200
@@ -46,7 +46,7 @@ class QModel(object):
         self.model = model
 
         observations = np.array([self.env.observation_space.sample() for _ in range(100000)])
-        self.scaler = sklearn.preprocessing.StandardScaler()
+        self.scaler = StandardScaler()
         self.scaler.fit(observations)
         self.kpca = RBFSampler(n_components=KPCA_DIMS)
         self.kpca.fit(self.scaler.transform(observations))
