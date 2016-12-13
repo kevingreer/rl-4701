@@ -1,6 +1,5 @@
-import gym
-from agent import SimpleAgent
 import tensorflow as tf
+
 from td_model import TdModel
 
 if __name__ == '__main__':

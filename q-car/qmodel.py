@@ -26,7 +26,7 @@ WIN_STREAK = 20
 WIN_THRESHOLD = 300
 FAILS_ALLOWED = 5
 
-RENDER = False
+RENDER = True
 
 class QModel(object):
     def __init__(self):

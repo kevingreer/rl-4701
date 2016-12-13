@@ -1,6 +1,6 @@
-import sys, gym
-import numpy as np
 import random
+
+import numpy as np
 
 LEFT, BRAKE, RIGHT = 0, 1, 2
 
